@@ -1,2 +1,2 @@
 # PPCG-SandboxViewer
-A sandbox feed for the PPCG sandbox
+A sandbox viewer for the PPCG sandbox

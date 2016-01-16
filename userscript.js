@@ -19,8 +19,10 @@ $("#SandboxViewerToggle").click(function() {
   GetChallenges(StackExchange.options.user.userId, function(posts) {
     var HTML = "";
     HTML += '<h1>Your Sandboxed Posts</h1><div><ul>'+ posts.map(function(post) {
-      return '<li><b>' + post.title + '</b><span>&nbsp;-&nbsp;' + post.score.up + " upvotes; " + post.score.down + " downvotes</span></li>";
+      return '<li><b><a href="' + post.url + '">' + post.title + '</a></b><span>&nbsp;-&nbsp;' + post.score.up + " upvote" + (post.score.up !== 1 ? "s" : "") + "; " + post.score.down + " downvote" + (post.score.up !== 1 ? "s" : "") + </span></li>";
     }).join("\n") +'</ul></div>';
+    
+    HTML += '<h1>Latest Activity</h1><div>' + '</div>';
     $("#SandboxContent").html(HTML);
   });
 });

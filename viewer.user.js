@@ -22,7 +22,9 @@ $("#SandboxViewerToggle").click(function() {
       return '<li><b><a href="' + post.url + '">' + post.title + '</a></b><span>&nbsp;-&nbsp;' + post.score.up + " upvote" + (post.score.up !== 1 ? "s" : "") + "; " + post.score.down + " downvote" + (post.score.down !== 1 ? "s" : "") + "</span></li>";
     }).join("\n") +'</ul></div>';
     
-    HTML += '<h1>Latest Activity</h1><div>' + '</div>';
+    HTML += '<h1>Latest Activity</h1><div>' + GetComments(posts).map(function (comment) {
+      return '<a href="http://codegolf.stackexchange.com/users/' + comment.userid + '">' + comment.user + '</a>: ' +comment.text + "<br>";
+    }).join("") + '</div>';
     $("#SandboxContent").html(HTML);
   });
 });
@@ -34,11 +36,35 @@ $('#SandboxBlur').click(function(){
 /*== Functions ==*/
 var GETPOSTS = "https://api.stackexchange.com/2.2/questions/2140/answers?order=desc&sort=activity&site=meta.codegolf&filter=!9wQs9*rijGfAx8HBVP.bJ21i2Cc.(K37QEG7FTe-J-";
 
+function GetComments(posts) {
+	return posts.reduce(function(data, post) {
+	  var comments = post.comments || [];
+	  comments.forEach(function(cm) {
+	    data.push({
+	      timestamp: cm.creation_date,
+	      user: cm.owner.display_name,
+	      userid: cm.owner.user_id,
+	      link: cm.link,
+	      text: cm.body,
+	      post: GetPostTitle(post.post.body_markdown)
+	    });
+	  });
+	  data.sort(function(a, b) {
+	    return b.timestamp - a.timestamp;
+	  });
+	  return data;
+	}, []);
+}
+
+function GetPostTitle(markdown) {
+  return (markdown.match(/(?:\n|^)(?:#+|\*\*)(.+)/)||["","Unknown Title"])[1]
+}
+
 function GetChallenges(userid, callback) {
   GetUserPosts(userid, function(posts) {
     callback(posts.map(function(post) {
       return {
-		  title: (post.body_markdown.match(/(?:\n|^)(?:#+|\*\*)(.+)/)||["","Unknown Title"])[1],
+      	title: GetPostTitle(post.body_markdown),
         score: {
           up: post.up_vote_count,
           down: post.down_vote_count

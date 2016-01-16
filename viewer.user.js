@@ -23,7 +23,7 @@ $("#SandboxViewerToggle").click(function() {
     }).join("\n") +'</ul></div>';
     
     HTML += '<h1>Latest Activity</h1><div>' + GetComments(posts).map(function (comment) {
-      return '<a href="http://codegolf.stackexchange.com/users/' + comment.userid + '">' + comment.user + '</a>: ' +comment.text + "<br>";
+      return '<b><a href="' + comment.postlink + '">' + comment.post + '</a></b>, <a href="http://codegolf.stackexchange.com/users/' + comment.userid + '">' + comment.user + '</a>: ' +comment.text + " - <a href=\"" + comment.link + "\">" + FormatDate(new Date(comment.timestamp)) +"</a><hr>";
     }).join("") + '</div>';
     $("#SandboxContent").html(HTML);
   });
@@ -36,6 +36,10 @@ $('#SandboxBlur').click(function(){
 /*== Functions ==*/
 var GETPOSTS = "https://api.stackexchange.com/2.2/questions/2140/answers?order=desc&sort=activity&site=meta.codegolf&filter=!9wQs9*rijGfAx8HBVP.bJ21i2Cc.(K37QEG7FTe-J-";
 
+function FormatDate(d) {
+  return [d.getMonth()+1, d.getDate()].join('/')+' '+ [d.getHours(), d.getMinutes(), d.getSeconds()].join(':');
+}
+
 function GetComments(posts) {
 	return posts.reduce(function(data, post) {
 	  var comments = post.comments || [];
@@ -44,6 +48,7 @@ function GetComments(posts) {
 	      timestamp: cm.creation_date,
 	      user: cm.owner.display_name,
 	      userid: cm.owner.user_id,
+	      postlink: post.post.link,
 	      link: cm.link,
 	      text: cm.body,
 	      post: GetPostTitle(post.post.body_markdown)

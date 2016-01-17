@@ -5,7 +5,7 @@
 // @description  PPCG Sandbox Viewer
 // @author       Downgoat
 // @match        *.stackexchange.com/*
-// @grant        none
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
   var OPENED = false;
@@ -21,6 +21,35 @@ $(document).ready(function() {
     return '<div style="overflow:scroll">' + post.body + '</div>';
   }
 
+  function VotePost(post, state) {
+	// States:
+	// 2 - Upvote
+    // 3 - Downvote
+	// Post: http://<site>.com/posts/<post_id>/vote/<state>
+	GM_xmlhttpRequest({
+		method: "POST",
+		data: "fkey=" + StackExchange.options.user.fkey,
+		url: post+"/vote/"+state,
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded"
+		},
+		onload:function(response) {
+		}
+	});
+  }
+  function CommentPost(post, comment) {
+	  GM_xmlhttpRequest({
+		  method: "POST",
+		  data: "fkey=" + StackExchange.options.user.fkey + "&comment=" + encodeURIComponent(comment),
+		  url: post+"/comments/",
+		  headers: {
+			"Content-Type": "application/x-www-form-urlencoded"
+		  },
+		  onload:function(response){
+			console.log(response);
+		  }
+	  });
+  }
   $("#SandboxViewerToggle").click(function() {
     $('#SandboxViewer').fadeIn(100);
     if (OPENED === false) {
@@ -39,14 +68,17 @@ $(document).ready(function() {
       GetChallenges("*nofilter*", function(posts) {
         var HTML = "";
         HTML += '<h1>Review Posts</h1><div style="text-align: right">' +
-          '<button class="sandboxbtn">Skip</button> <button class="sandboxbtn">This challenge has been posted</button>' +
-          '<button class="sandboxbtn">-1 Challenge</button> <button class="sandboxbtn">+1 Challenge</button><br>' +
-		  '<button>Flag</button> <button>Edit</button> <button>Comment</button>' +
+          '<button class="sandboxbtn">Skip</button>' +
+          '<button class="sandboxbtn FVoteDown">-1 Challenge</button> <button class="FVoteUp sandboxbtn">+1 Challenge</button><br>' +
+		  '<button class="FComment">Comment</button>' +
           '</div><hr><div id="SandboxChallengePreview">' + ConstructPost(posts[POSTCOUNTER]) + '</div>';
         $("#SandboxContent").append('<div style="width: 60%; float: right">' + HTML + '</div>');
 		$(".sandboxbtn").click(function() {
           $("#SandboxChallengePreview").html(ConstructPost(posts[++POSTCOUNTER]));
 		});
+		$(".FVoteUp").click(function() { VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER - 1].id, 2); });
+		$(".FVoteDown").click(function() { VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER - 1].id, 3); });
+		$(".FComment").click(function(){ CommentPost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, prompt("Comment Markdown: ")); });
       });
       $("#USERLOAD").remove();
     }
@@ -107,7 +139,7 @@ function GetChallenges(userid, callback) {
 }
 
 function GetUserPosts(userid, callback) {
-  Request("GET", "https://api.stackexchange.com/2.2/questions/2140/answers?order=desc&sort=activity&site=meta.codegolf&filter=!9wQs9*rijGfAx8HBVP.bJ21cgRqrG(XCNUCrB__HBm", function(req) {
+  Request("GET", "https://api.stackexchange.com/2.2/questions/2140/answers?order=desc&sort=activity&key=Ccn4VoktkZPX*Haf3)iubw((&site=meta.codegolf&filter=!9wQs9*rijGfAx8HBVP.bJ21cgRqrG(XCNUCrB__HBm", function(req) {
     var items = JSON.parse(req.response).items;
     callback(items.filter(function(item) {
       return userid == "*nofilter*" ? item.owner.user_id !== StackExchange.options.user.userId : item.owner.user_id === userid;

@@ -4,7 +4,14 @@
 // @version      1
 // @description  PPCG Sandbox Viewer
 // @author       Downgoat
+// @require      https://code.jquery.com/jquery-2.2.0.min.js
+// @match        *://*.askubuntu.com/*
+// @match        *://*.onstartups.com/*
+// @match        *://*.serverfault.com/*
+// @match        *://*.stackapps.com/*
 // @match        *://*.stackexchange.com/*
+// @match        *://*.stackoverflow.com/*
+// @match        *://*.superuser.com/*
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {

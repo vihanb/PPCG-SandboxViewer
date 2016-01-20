@@ -4,19 +4,14 @@
 // @version      1
 // @description  PPCG Sandbox Viewer
 // @author       Downgoat
-// @require      https://code.jquery.com/jquery-2.2.0.min.js
-// @match        *://*.askubuntu.com/*
-// @match        *://*.onstartups.com/*
-// @match        *://*.serverfault.com/*
-// @match        *://*.stackapps.com/*
 // @match        *://*.stackexchange.com/*
-// @match        *://*.stackoverflow.com/*
-// @match        *://*.superuser.com/*
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
+
 $(document).ready(function() {
   var OPENED = false;
   $("body").prepend('<div id="SandboxViewer" style="display:none; width: inherit; height: inherit;"></div>');
+  $("body").prepend('<div id="SandboxPopdisp" style="display: none; z-index: 5; position: fixed; background: rgba(0, 0, 0, 0.75); color: white; top: 50%; left: 50%; line-height: 70px; text-align: center; font-size: 36px; font-weight: bold; height: 70px; width: 120px; border-radius: 8px; transform: translateY(-50%) translateX(-50%);"></div>');
   $('#SandboxViewer').prepend('<div id="SandboxBlur" style="position: fixed;z-index:2;width:100%;height:100%;background:rgba(0,0,0,0.5)"></div>');
   $('#SandboxViewer').append('<div id="SandboxContent" style="position: fixed; overflow: scroll; z-index: 3; width: 90%; max-height: 90%;top: 50%;left: 50%;transform: translateY(-50%) translateX(-50%);background: #FAFAFA;padding: 1em;"><span id="USERLOAD">Loading...</span></div>');
 
@@ -24,6 +19,13 @@ $(document).ready(function() {
 
   var POSTCOUNTER = 0;
 
+  function PopupDisplay(text) {
+    $("#SandboxPopdisp").html(text);
+	$("#SandboxPopdisp").fadeIn(200, function () {
+      $(this).delay(1000).fadeOut(200);
+    });
+  }
+	
   function ConstructPost(post) {
     return '<div>' + post.body + '</div>';
   }
@@ -57,7 +59,7 @@ $(document).ready(function() {
 		  }
 	  });
   }
-  function PostPost(title, body) {
+  function PostPost(title, body, id) {
 	  console.log(title, body);
 	  GM_xmlhttpRequest({
 		  method: "POST",
@@ -67,8 +69,10 @@ $(document).ready(function() {
 			"Content-Type": "application/x-www-form-urlencoded"
 		  },
 		  onload:function(response){
-			  console.log(response);
-		      var win = window.open("", "Post From the Sandbox");
+			  var url  = (response.responseText.match(/<meta property="og:url" content="([^"]+)/)||[])[1];
+			  var title= $(response.responseText).find("title").text();
+		      var win = window.open(url, title || "Post From the Sandbox");
+			  VotePost("http://meta.codegolf.stackexchange.com/posts/" + id, 10);
 		      win.document.write(response.responseText);
 		  }
 	  });
@@ -101,13 +105,12 @@ wmd-input-42=
       });
       GetChallenges("*nofilter*", function(posts) {
         var HTML = "";
-        HTML += '<div style="text-align: left; float: left; width: 50%; margin-bottom: 10px;">'+
-		  '<button id="FPREV" style="display: none">Previous Challenge</button><br><button id="FHIDE">Don\'t show this again</button></div>'+
+        HTML += '<div style="text-align: left; float: left; width: 30%; margin-bottom: 10px;">'+
+		  '<button class="FLink">See in Sandbox</button> <br><button class="FComment">Comment</button></div>'+
 			
-		  '<div style="text-align: right; float: right; width: 50%; margin-bottom: 10px;">' +
-          '<button class="sandboxbtn FNEXT">Next</button>' +
-          '<button class="sandboxbtn FVoteDown">-1 Challenge</button> <button class="FVoteUp sandboxbtn">+1 Challenge</button><br>' +
-		  '<a target="_blank" class="FLink">See in Sandbox</a> <button class="FComment">Comment</button>' +
+		  '<div style="text-align: right; float: right; width: 60%; margin-bottom: 10px;">' +
+          '<button id="FPREV" style="display: none">Previous Challenge</button> <button class="sandboxbtn FNEXT">Next</button><button id="FHIDE">Don\'t show this again</button><br>' +
+		  '<button class="FVoteDown">-1 Challenge</button> <button class="FVoteUp">+1 Challenge</button>' +
           '</div><hr style="background: #DDD; width: 100%;"><div id="SandboxChallengePreview">' + ConstructPost(posts[POSTCOUNTER]) + '</div>';
         $("#SandboxContent").append('<div style="width: 60%; float: right">' + HTML + '</div>');
 		$(".sandboxbtn").click(function() {
@@ -136,13 +139,13 @@ wmd-input-42=
 		  localStorage.setItem("FHIDE", JSON.stringify(H));
 		  $(".FNEXT").click();
 		});
-		$(".FVoteUp").click(function() { VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER - 1].id, 2); });
-		$(".FVoteDown").click(function() { VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER - 1].id, 3); });
+		$(".FVoteUp").click(function() { PopupDisplay("+1'd"); VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 2); });
+		$(".FVoteDown").click(function() { PopupDisplay("-1'd"); VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 3); });
 		$(".FComment").click(function(){ CommentPost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, prompt("Comment Markdown: ")); });
 		$(".FLink").click(function(){ window.open(posts[POSTCOUNTER].url, "_blank"); });
 		$(".Fmtom").click(function(){ Request("GET", "http://api.stackexchange.com/2.2/answers/"+$(this).data('postid')+"?order=desc&sort=activity&key=Ccn4VoktkZPX*Haf3)iubw((&site=meta.codegolf&filter=!GeEyUcJFJeRCA", function(response) {
 			var res = JSON.parse(response.responseText).items[0].body_markdown;
-			PostPost(GetPostTitle(res), res);
+			PostPost(GetPostTitle(res), res, $(this).data('postid'));
 		}); });
       });
       $("#USERLOAD").remove();

@@ -122,6 +122,9 @@ wmd-input-42=
 
         function ConstructPost(post) {
           UpdatePreviewComments();
+          $(".FVoteActive").removeClass("FVoteActive");
+          $(".FVoteUp").attr('src', 'http://i.stack.imgur.com/EQ1ko.png');
+          $(".FVoteDown").attr('src', 'http://i.stack.imgur.com/OwtQb.png');
           return '<div>' + post.body + '</div>';
         }
 

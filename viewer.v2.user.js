@@ -8,12 +8,13 @@
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
-$(document).ready(function() {
+function InjectSandboxScript() {
+
   var OPENED = false;
   $("body").prepend('<div id="SandboxViewer" style="display:none; width: inherit; height: inherit;"></div>');
   $("body").prepend('<div id="SandboxPopdisp" style="display: none; z-index: 5; position: fixed; background: rgba(0, 0, 0, 0.75); color: white; top: 50%; left: 50%; line-height: 70px; text-align: center; font-size: 36px; font-weight: bold; height: 70px; width: 120px; border-radius: 8px; transform: translateY(-50%) translateX(-50%);"></div>');
   $('#SandboxViewer').prepend('<div id="SandboxBlur" style="position: fixed;z-index:2;width:100%;height:100%;background:rgba(0,0,0,0.5)"></div>');
-  $('#SandboxViewer').append('<div id="SandboxContent" style="position: fixed; overflow: scroll; z-index: 3; width: 100%; max-height: 100%;box-sizing:border-box;top: 50%;left: 50%;transform: translateY(-50%) translateX(-50%);background: #FAFAFA;padding: 1em;display: -webkit-flex;display: flex;"><div style="color: gray;position: fixed;cursor: pointer;top: 2px;right: 5px;font-size: 18px;" id="closeviewer">x</div><span id="USERLOAD">Loading...</span></div>');
+  $('#SandboxViewer').append('<div id="SandboxContent" style="position: fixed; overflow: scroll; z-index: 3; width: 100%; max-height: 100%;box-sizing:border-box;top: 50%;left: 50%;transform: translateY(-50%) translateX(-50%);background: #FAFAFA;padding: 1em;display: -webkit-flex;display: flex;"><div style="color: gray;position: fixed;cursor: pointer;top: 2px;left: 5px;font-size: 14px;" id="closeviewer">x</div><span id="USERLOAD">Loading...</span></div>');
 
   $(".topbar .topbar-wrapper .network-items").append('<a id="SandboxViewerToggle" class="topbar-icon yes-hover" style="z-index:1;width: 36px; background-image: url(http://i.stack.imgur.com/lBskr.png); background-size: 19px 19px; background-position: 8px 7px"></a>');
 
@@ -73,7 +74,7 @@ wmd-input-42=
 */
   }
 
-  $("#SandboxViewerToggle").click(function() {
+  $(document).on('click', "#SandboxViewerToggle", function() {
     $('#SandboxViewer').fadeIn(100);
     if (OPENED === false) {
       OPENED = true;
@@ -178,11 +179,11 @@ wmd-input-42=
             }, 200);
           });
         });
-        $("E").click(function() {
+        $("#FHIDE").click(function() {
           var H=JSON.parse(localStorage.getItem("FHIDE") || '[]');
           H.push(posts[POSTCOUNTER].id);
           localStorage.setItem("FHIDE", JSON.stringify(H));
-          $(".").click();
+          $(".FNEXT").click();
         });
         $(document).on('click', ".FVoteUp:not(.FVoteActive)", function() {
           VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 2);
@@ -223,126 +224,130 @@ wmd-input-42=
   $('#SandboxBlur, #closeviewer').click(function() {
     $('#SandboxViewer').fadeOut(100);
   });
-});
 
-/*== Functions ==*/
-function FormatDate(d) {
-  return [d.getMonth() + 1, d.getDate(), d.getYear()+1900].join('/') + ' ' +
-    [d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()].join(':');
-}
+  /*== Functions ==*/
+  function FormatDate(d) {
+    return [d.getMonth() + 1, d.getDate(), d.getYear()+1900].join('/') + ' ' +
+      [d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()].join(':');
+  }
 
-function TimeSince(d) {
-  var s = Math.floor((new Date() - new Date(+(d+'e3'))) / 1000);
-  var interval = Math.floor(s / 31536000);
-  if (interval > 1) return interval + " years ago";
-  interval = Math.floor(s / 2592000);
-  if (interval > 1) return interval + " months ago";
-  interval = Math.floor(s / 86400);
-  if (interval > 1) return interval + " days ago";
-  interval = Math.floor(s / 3600);
-  if (interval > 1) return interval + " hours ago";
-  interval = Math.floor(s / 60);
-  if (interval > 1) return interval + " minutes ago";
-  return Math.floor(s) + " seconds ago";
-}
+  function TimeSince(d) {
+    var s = Math.floor((new Date() - new Date(+(d+'e3'))) / 1000);
+    var interval = Math.floor(s / 31536000);
+    if (interval > 1) return interval + " years ago";
+    interval = Math.floor(s / 2592000);
+    if (interval > 1) return interval + " months ago";
+    interval = Math.floor(s / 86400);
+    if (interval > 1) return interval + " days ago";
+    interval = Math.floor(s / 3600);
+    if (interval > 1) return interval + " hours ago";
+    interval = Math.floor(s / 60);
+    if (interval > 1) return interval + " minutes ago";
+    return Math.floor(s) + " seconds ago";
+  }
 
-function GetComments(posts) {
-  return posts.reduce(function(data, post) {
-    var comments = post.comments || [];
-    comments.forEach(function(cm) {
-      data.push({
-        timestamp: cm.creation_date,
-        user: cm.owner.display_name,
-        userid: cm.owner.user_id,
-        postlink: post.post.link,
-        link: cm.link,
-        text: cm.body,
-        post: GetPostTitle(post.post.body_markdown)
+  function GetComments(posts) {
+    return posts.reduce(function(data, post) {
+      var comments = post.comments || [];
+      comments.forEach(function(cm) {
+        data.push({
+          timestamp: cm.creation_date,
+          user: cm.owner.display_name,
+          userid: cm.owner.user_id,
+          postlink: post.post.link,
+          link: cm.link,
+          text: cm.body,
+          post: GetPostTitle(post.post.body_markdown)
+        });
       });
-    });
-    data.sort(function(a, b) {
-      return b.timestamp - a.timestamp;
-    });
-    return data;
-  }, []);
-}
+      data.sort(function(a, b) {
+        return b.timestamp - a.timestamp;
+      });
+      return data;
+    }, []);
+  }
 
-function GetPostTitle(markdown) {
-  return (markdown.match(/(?:\n|^)#+(.+)/) || ["", "Unknown Title"])[1];
-}
+  function GetPostTitle(markdown) {
+    return (markdown.match(/(?:\n|^)#+(.+)/) || ["", "Unknown Title"])[1];
+  }
 
-function GetChallenges(userid, callback) {
-  GetUserPosts(userid, function(posts) {
-    callback(posts.map(function(post) {
-      return {
-        title: GetPostTitle(post.body_markdown),
-        score: {
-          up: post.up_vote_count,
-          down: post.down_vote_count
-        },
-        url: post.link,
-        comments: post.comments,
-        id: post.answer_id,
-        body: post.body,
-        post: post,
-        active: post.last_activity_date
-      };
-    }));
-  });
-}
-
-function OpenSockets() {
-  var ws = new WebSocket("wss://qa.sockets.stackexchange.com/202-question-2140");
-  ws.onMessage = function(e) {
-    try {
-      var wsd = JSON.parse(JSON.parse(e.data).data);
-      if (wsd.a === "answer-add") {
-        // answer added
-        $("#SandboxViewerToggle").css("background-image", "url(http://i.stack.imgur.com/COtrF.png)");
-      }
-    } catch(e) {
-      console.log("error during websocket update");
-    }
-  };
-}
-
-if (true) OpenSockets(); // Use WS?
-
-function GetUserPosts(userid, callback) {
-  ///
-  var hideitem = JSON.parse(localStorage.getItem("FHIDE") || '[]');
-  if (userid === "*nofilter*") {
-    Request("GET", "https://api.stackexchange.com/2.2/questions/2140/answers?order=desc&sort=activity&key=Ccn4VoktkZPX*Haf3)iubw((&site=meta.codegolf&filter=!-2qNq(tTGQYRU3SZ87hedUU)5htvSK6RNae3(IkBC-M8i", function(req) {
-      var items = JSON.parse(req.response).items;
-      callback(items.filter(function(item) {
-        return !~hideitem.indexOf(item.answer_id) && item.owner.user_id !== StackExchange.options.user.userId;
+  function GetChallenges(userid, callback) {
+    GetUserPosts(userid, function(posts) {
+      callback(posts.map(function(post) {
+        return {
+          title: GetPostTitle(post.body_markdown),
+          score: {
+            up: post.up_vote_count,
+            down: post.down_vote_count
+          },
+          url: post.link,
+          comments: post.comments,
+          id: post.answer_id,
+          body: post.body,
+          post: post,
+          active: post.last_activity_date
+        };
       }));
     });
-  } else {
-    Request("GET", "http://api.stackexchange.com/2.2/search/excerpts?order=desc&sort=activity&title=Sandbox%20for%20Proposed%20Challenges&user="+StackExchange.options.user.userId+"&site=meta.codegolf", function(data) {
-      var items = JSON.parse(data.response).items;
-      function Loop(i, a) {
-        if (i > items.length - 1) {
-          callback(a);
-        } else {
-          Request("GET", 'http://api.stackexchange.com/2.2/answers/'+items[i].answer_id+'?pagesize=100&order=desc&sort=activity&site=meta.codegolf&filter=!-2qNq(tTGQYRU3SZ87hedUU)5htvSK6RNae3(IkBC-M8i', function(r) {
-            a.push(JSON.parse(r.response).items[0]);
-            Loop(i + 1, a);
-          });
+  }
+
+  function OpenSockets() {
+    var ws = new WebSocket("wss://qa.sockets.stackexchange.com/202-question-2140");
+    ws.onMessage = function(e) {
+      try {
+        var wsd = JSON.parse(JSON.parse(e.data).data);
+        if (wsd.a === "answer-add") {
+          // answer added
+          $("#SandboxViewerToggle").css("background-image", "url(http://i.stack.imgur.com/COtrF.png)");
         }
+      } catch(e) {
+        console.log("error during websocket update");
       }
-      Loop(0, []);
-    });
+    };
+  }
+
+  if (true) OpenSockets(); // Use WS?
+
+  function GetUserPosts(userid, callback) {
+    ///
+    var hideitem = JSON.parse(localStorage.getItem("FHIDE") || '[]');
+    if (userid === "*nofilter*") {
+      Request("GET", "https://api.stackexchange.com/2.2/questions/2140/answers?order=desc&sort=activity&key=Ccn4VoktkZPX*Haf3)iubw((&site=meta.codegolf&filter=!-2qNq(tTGQYRU3SZ87hedUU)5htvSK6RNae3(IkBC-M8i", function(req) {
+        var items = JSON.parse(req.response).items;
+        callback(items.filter(function(item) {
+          return !~hideitem.indexOf(item.answer_id) && item.owner.user_id !== StackExchange.options.user.userId;
+        }));
+      });
+    } else {
+      Request("GET", "http://api.stackexchange.com/2.2/search/excerpts?order=desc&sort=activity&title=Sandbox%20for%20Proposed%20Challenges&user="+StackExchange.options.user.userId+"&site=meta.codegolf", function(data) {
+        var items = JSON.parse(data.response).items;
+        function Loop(i, a) {
+          if (i > items.length - 1) {
+            callback(a);
+          } else {
+            Request("GET", 'http://api.stackexchange.com/2.2/answers/'+items[i].answer_id+'?pagesize=100&order=desc&sort=activity&site=meta.codegolf&filter=!-2qNq(tTGQYRU3SZ87hedUU)5htvSK6RNae3(IkBC-M8i', function(r) {
+              a.push(JSON.parse(r.response).items[0]);
+              Loop(i + 1, a);
+            });
+          }
+        }
+        Loop(0, []);
+      });
+    }
+  }
+
+  function Request(type, url, callback) {
+    var r = new XMLHttpRequest();
+    r.onreadystatechange = function() {
+      if (r.readyState === 4)
+        if (r.status === 200) callback(r);
+    };
+    r.open(type, url);
+    if (type.toUpperCase() === "POST") r.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    r.send();
   }
 }
 
-function Request(type, url, callback) {
-  var r = new XMLHttpRequest();
-  r.onreadystatechange = function() {
-    if (r.readyState === 4)
-      if (r.status === 200) callback(r);
-  };
-  r.open(type, url);
-  if (type.toUpperCase() === "POST") r.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  r.send();
-}
+var script = document.createElement('script');
+script.appendChild(document.createTextNode('('+ InjectSandboxScript +')();'));
+(document.body || document.head || document.documentElement).appendChild(script);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Sandbox Viewer
 // @namespace    https://github.com/vihanb/PPCG-SandboxViewer
-// @version      2.0
+// @version      2.3
 // @description  PPCG Sandbox Viewer
 // @author       Downgoat
 // @match        *://*.stackexchange.com/*

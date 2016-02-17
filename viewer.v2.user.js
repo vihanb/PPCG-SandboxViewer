@@ -77,6 +77,7 @@ wmd-input-42=
     $('#SandboxViewer').fadeIn(100);
     if (OPENED === false) {
       OPENED = true;
+      $("#SandboxViewerToggle").css("background-image", "url(http://i.stack.imgur.com/lBskr.png)");
       GetChallenges(StackExchange.options.user.userId, function(posts) {
         var HTML = "";
         HTML += '<h1>Your Sandboxed Posts</h1><div><ul>' + posts.map(function(post) {
@@ -142,7 +143,7 @@ wmd-input-42=
         var HTML = "";
         HTML += '<div><div style="text-align: left; float: left; margin-bottom: 10px;">'+
           '<button class="FLink">See in Sandbox</button><br>'+
-          '<button id="FPREV" style="display: none">Previous Challenge</button> <button class="sandboxbtn FNEXT">Next</button><button id="FHIDE">Don\'t show this again</button></div>'+
+          '<button id="FPREV" disabled>Previous Challenge</button> <button class="sandboxbtn FNEXT">Next</button><button id="FHIDE">Don\'t show this again</button></div>'+
           '<div style="text-align: right; float: right; margin-top: 15px;">' +
 
           '<img style="height: 40px; cursor: pointer" src="http://i.stack.imgur.com/EQ1ko.png" class="FVoteUp">' +
@@ -158,8 +159,8 @@ wmd-input-42=
               $("#SandboxChallengePreview").html(ConstructPost(posts[++POSTCOUNTER]));
               UpdatePreviewComments();
               $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 1);
-              if(POSTCOUNTER === 0) $("#FPREV").hide();
-              else $("#FPREV").fadeIn(50);
+              if(POSTCOUNTER === 0) $("#FPREV").prop('disabled', true);
+              else $("#FPREV").prop('disabled', false);
             }, 200);
           });
         });
@@ -169,12 +170,12 @@ wmd-input-42=
               $("#SandboxChallengePreview").html(ConstructPost(posts[--POSTCOUNTER]));
               UpdatePreviewComments();
               $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 1);
-              if(POSTCOUNTER === 0) $("#FPREV").fadeOut(50);
-              else $("#FPREV").fadeIn(50);
+              if(POSTCOUNTER === 0) $("#FPREV").prop('disabled', true);
+              else $("#FPREV").prop('disabled', false);
             }, 200);
           });
         });
-        $("#FHIDE").click(function() {
+        $("E").click(function() {
           var H=JSON.parse(localStorage.getItem("FHIDE") || '[]');
           H.push(posts[POSTCOUNTER].id);
           localStorage.setItem("FHIDE", JSON.stringify(H));
@@ -285,6 +286,21 @@ function GetChallenges(userid, callback) {
       };
     }));
   });
+}
+
+function OpenSockets() {
+  var ws = new WebSocket("wss://qa.sockets.stackexchange.com/202-question-2140");
+  ws.onMessage = function(e) {
+    try {
+      var wsd = JSON.parse(JSON.parse(e.data).data);
+      if (wsd.a === "answer-add") {
+        // answer added
+        $("#SandboxViewerToggle").css("background-image", "url(http://i.stack.imgur.com/COtrF.png)");
+      }
+    } catch(e) {
+      console.log("error during websocket update");
+    }
+  };
 }
 
 function GetUserPosts(userid, callback) {

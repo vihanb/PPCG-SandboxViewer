@@ -6,6 +6,7 @@
 // @author       Downgoat
 // @match        *://*.stackexchange.com/*
 // @grant        GM_xmlhttpRequest
+// @updateURL    https://rawgit.com/vihanb/PPCG-SandboxViewer/master/viewer.v2.user.js
 // ==/UserScript==
 
 function InjectSandboxScript() {

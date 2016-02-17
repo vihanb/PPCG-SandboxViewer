@@ -303,6 +303,8 @@ function OpenSockets() {
   };
 }
 
+if (true) OpenSockets(); // Use WS?
+
 function GetUserPosts(userid, callback) {
   ///
   var hideitem = JSON.parse(localStorage.getItem("FHIDE") || '[]');

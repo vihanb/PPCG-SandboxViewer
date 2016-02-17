@@ -111,7 +111,7 @@ wmd-input-42=
             $("#SPshow").html("(hide some comments)");
             $("#SPshow").attr("id", "SPhide");
           });
-          
+
           $(document).on('click', "#SPhide", function() {
             $(".SPrevH").hide();
             $("#SPhide").html("(show all comments)");
@@ -144,7 +144,7 @@ wmd-input-42=
           '<button class="FLink">See in Sandbox</button><br>'+
           '<button id="FPREV" style="display: none">Previous Challenge</button> <button class="sandboxbtn FNEXT">Next</button><button id="FHIDE">Don\'t show this again</button></div>'+
           '<div style="text-align: right; float: right; margin-top: 15px;">' +
-          
+
           '<img style="height: 40px; cursor: pointer" src="http://i.stack.imgur.com/EQ1ko.png" class="FVoteUp">' +
           '<img style="height: 40px; cursor: pointer" src="http://i.stack.imgur.com/OwtQb.png" class="FVoteDown">'+
           '</div></div>'+
@@ -288,13 +288,31 @@ function GetChallenges(userid, callback) {
 }
 
 function GetUserPosts(userid, callback) {
+  ///
   var hideitem = JSON.parse(localStorage.getItem("FHIDE") || '[]');
-  Request("GET", "https://api.stackexchange.com/2.2/questions/2140/answers?order=desc&sort=activity&key=Ccn4VoktkZPX*Haf3)iubw((&site=meta.codegolf&filter=!-2qNq(tTGQYRU3SZ87hedUU)5htvSK6RNae3(IkBC-M8i", function(req) {
-    var items = JSON.parse(req.response).items;
-    callback(items.filter(function(item) {
-      return !~hideitem.indexOf(item.answer_id) && (userid == "*nofilter*" ? item.owner.user_id !== StackExchange.options.user.userId : item.owner.user_id === userid);
-    }));
-  });
+  if (userid === "*nofilter*") {
+    Request("GET", "https://api.stackexchange.com/2.2/questions/2140/answers?order=desc&sort=activity&key=Ccn4VoktkZPX*Haf3)iubw((&site=meta.codegolf&filter=!-2qNq(tTGQYRU3SZ87hedUU)5htvSK6RNae3(IkBC-M8i", function(req) {
+      var items = JSON.parse(req.response).items;
+      callback(items.filter(function(item) {
+        return !~hideitem.indexOf(item.answer_id) && item.owner.user_id !== StackExchange.options.user.userId;
+      }));
+    });
+  } else {
+    Request("GET", "http://api.stackexchange.com/2.2/search/excerpts?order=desc&sort=activity&title=Sandbox%20for%20Proposed%20Challenges&user="+StackExchange.options.user.userId+"&site=meta.codegolf", function(data) {
+      var items = JSON.parse(data.response).items;
+      function Loop(i, a) {
+        if (i > items.length - 1) {
+          callback(a);
+        } else {
+          Request("GET", 'http://api.stackexchange.com/2.2/answers/'+items[i].answer_id+'?pagesize=100&order=desc&sort=activity&site=meta.codegolf&filter=!-2qNq(tTGQYRU3SZ87hedUU)5htvSK6RNae3(IkBC-M8i', function(r) {
+            a.push(JSON.parse(r.response).items[0]);
+            Loop(i + 1, a);
+          });
+        }
+      }
+      Loop(0, []);
+    });
+  }
 }
 
 function Request(type, url, callback) {

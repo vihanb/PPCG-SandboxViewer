@@ -293,8 +293,10 @@ wmd-input-42=
   }
 
   function OpenSockets() {
-    var ws = new WebSocket("wss://qa.sockets.stackexchange.com/202-question-2140");
-    ws.onMessage = function(e) {
+    var ws = new WebSocket("ws://qa.sockets.stackexchange.com/");
+    ws.onmessage = function(e) {
+      // If this shows up then it's good
+      console.log("Hi, you must be looking at your console wondering what the heck this message means. It means you should be happy that this message is being logged otherwise something very wrong happened");
       try {
         var wsd = JSON.parse(JSON.parse(e.data).data);
         if (wsd.a === "answer-add") {
@@ -305,6 +307,9 @@ wmd-input-42=
         console.log("error during websocket update");
       }
     };
+    ws.onopen = function() {
+      ws.send("202-question-2140");
+    }
   }
 
   if (true) OpenSockets(); // Use WS?

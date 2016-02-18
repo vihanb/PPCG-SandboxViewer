@@ -15,7 +15,7 @@ function InjectSandboxScript() {
   $("body").prepend('<div id="SandboxViewer" style="display:none; width: inherit; height: inherit;"></div>');
   $("body").prepend('<div id="SandboxPopdisp" style="display: none; z-index: 5; position: fixed; background: rgba(0, 0, 0, 0.75); color: white; top: 50%; left: 50%; line-height: 70px; text-align: center; font-size: 36px; font-weight: bold; height: 70px; width: 120px; border-radius: 8px; transform: translateY(-50%) translateX(-50%);"></div>');
   $('#SandboxViewer').prepend('<div id="SandboxBlur" style="position: fixed;z-index:2;width:100%;height:100%;background:rgba(0,0,0,0.5)"></div>');
-  $('#SandboxViewer').append('<div id="SandboxContent" style="position: fixed; overflow: scroll; z-index: 3; width: 100%; max-height: 100%;box-sizing:border-box;top: 50%;left: 50%;transform: translateY(-50%) translateX(-50%);background: #FAFAFA;padding: 1em;display: -webkit-flex;display: flex;"><div style="color: gray;position: fixed;cursor: pointer;top: 2px;left: 5px;font-size: 14px;" id="closeviewer">x</div><span id="USERLOAD">Loading...</span></div>');
+  $('#SandboxViewer').append('<div id="SandboxContent" style="position: fixed; overflow: scroll; z-index: 3; width: 100%; max-height: 100%;box-sizing:border-box;top: 50%;left: 50%;transform: translateY(-50%) translateX(-50%);background: #FAFAFA;padding: 1.2em;display: -webkit-flex;display: flex;"><div style="color: gray;position: fixed;cursor: pointer;top: 0px;left: 5px;font-size: 14px;" id="closeviewer">x</div><span id="USERLOAD">Loading...</span></div>');
 
   $(".topbar .topbar-wrapper .network-items").append('<a id="SandboxViewerToggle" class="topbar-icon yes-hover" style="z-index:1;width: 36px; background-image: url(http://i.stack.imgur.com/lBskr.png); background-size: 19px 19px; background-position: 8px 7px"></a>');
 
@@ -82,18 +82,18 @@ wmd-input-42=
       $("#SandboxViewerToggle").css("background-image", "url(http://i.stack.imgur.com/lBskr.png)");
       GetChallenges(StackExchange.options.user.userId, function(posts) {
         var HTML = "";
-        HTML += '<h1>Your Sandboxed Posts</h1><div><ul>' + posts.map(function(post) {
+        HTML += '<h1>Your Sandboxed Posts</h1><div><ul>' + (posts.map(function(post) {
           return '<li><b><a href="' + post.url + '">' + post.title + '</a></b>' +
             '<br><span>score: <span style="color: green;">+' + post.score.up + '</span>'+
             ' <span style="color: red">-' + post.score.down + '</span></span>' +
             '<br><span>active: ' + TimeSince( post.active ) + '</span>'
           // + '<br><a class="Fmtom" data-postid="'+post.id+'">Post to main</a></li>';
-        }).join("\n") + '</ul></div>';
+        }).join("\n") || "</ul><div>You currently have no Sandboxed posts</div><ul>") + '</ul></div>';
 
-        HTML += '<h1>Latest Activity</h1><div>' + GetComments(posts).map(function(comment, i, a) {
+        HTML += '<h1>Latest Activity</h1><div>' + (GetComments(posts).map(function(comment, i, a) {
           return '<div '+
             (i == a.length - 1 ? "" : ' style="border-bottom: 1px solid #DDD; padding-bottom: 8px; margin-bottom: 8px"')+'><b><a href="' + comment.postlink + '">' + comment.post + '</a></b>, <a href="http://codegolf.stackexchange.com/users/' + comment.userid + '">' + comment.user + '</a>: ' + comment.text + " - <a href=\"" + comment.link + "\">" + TimeSince(comment.timestamp) + "</a></div>";
-        }).join("") + '</div>';
+        }).join("") || "<div>You currently have no Sandboxed posts</div>") + '</div>';
         $("#SandboxContent").prepend('<div style="width: 33%; -webkit-flex-direction: column; flex-direction: column; overflow: auto;">' + HTML + "</div>");
       });
       GetChallenges("*nofilter*", function(posts) {
@@ -274,19 +274,20 @@ wmd-input-42=
 
   function GetChallenges(userid, callback) {
     GetUserPosts(userid, function(posts) {
-      callback(posts.map(function(post) {
+      callback(posts.map(function(p) {
+        //console.log(p);
         return {
-          title: GetPostTitle(post.body_markdown),
+          title: GetPostTitle(p.body_markdown),
           score: {
-            up: post.up_vote_count,
-            down: post.down_vote_count
+            up: p.up_vote_count,
+            down: p.down_vote_count
           },
-          url: post.link,
-          comments: post.comments,
-          id: post.answer_id,
-          body: post.body,
-          post: post,
-          active: post.last_activity_date
+          url: p.link,
+          comments: p.comments,
+          id: p.answer_id,
+          body: p.body,
+          post: p,
+          active: p.last_activity_date
         };
       }));
     });

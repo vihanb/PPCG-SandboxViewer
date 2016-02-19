@@ -151,6 +151,7 @@ wmd-input-42=
           '<button id="FPREV" disabled>Previous Challenge</button> <button class="sandboxbtn FNEXT">Next</button><button id="FHIDE">Don\'t show this again</button></div>'+
           '<div style="text-align: right; float: right; margin-top: 15px;">' +
 
+          'Voting / Commenting is currently unsupported on GreaseMonkey due to sandboxing' +
           '<img style="height: 40px; cursor: pointer" src="http://i.stack.imgur.com/EQ1ko.png" class="FVoteUp">' +
           '<img style="height: 40px; cursor: pointer" src="http://i.stack.imgur.com/OwtQb.png" class="FVoteDown">'+
           '</div></div>'+
@@ -355,4 +356,6 @@ wmd-input-42=
   }
 }
 
-InjectSandboxScript();
+var script = document.createElement('script');
+script.appendChild(document.createTextNode('('+ InjectSandboxScript +')();'));
+(document.body || document.head || document.documentElement).appendChild(script);

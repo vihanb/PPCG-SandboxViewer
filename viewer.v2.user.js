@@ -21,6 +21,8 @@ function InjectSandboxScript() {
 
   var POSTCOUNTER = 0;
 
+  var ALLPOSTS = null;
+
   function PopupDisplay(text) {
     $("#SandboxPopdisp").html(text);
     $("#SandboxPopdisp").fadeIn(200, function () {
@@ -75,20 +77,191 @@ wmd-input-42=
 */
   }
 
+  function ConstructPost(post) {
+    $(".FVoteActive").removeClass("FVoteActive");
+    $(".FVoteUp").attr('src', 'http://i.stack.imgur.com/EQ1ko.png');
+    $(".FVoteDown").attr('src', 'http://i.stack.imgur.com/OwtQb.png');
+    return '<div>' + post.body + '</div>';
+  }
+
+  function UpdatePreviewComments(posts) {
+    var Comments = GetComments([posts[POSTCOUNTER]]).reverse();
+    var LIMIT = 2;
+    var a = false;
+    if (Comments.length > LIMIT) a = true;
+    $("#SandboxPreviewComments").html( (a ? '<div style="padding: 5px 2px; border-bottom: 1px solid #DDD; margin-bottom: 3px;"><a id="SPshow">(show all)</a></div>' : "") + Comments.map(function(comment,index,a) {
+      return '<div class="'+(a.length-index>LIMIT?"SPrevH":"")+'" style="'+(a.length-index>LIMIT?"display:none;":"")+'padding: 5px 2px; border-bottom: 1px solid #DDD; margin-bottom: 3px;">'+
+        '<a href="http://codegolf.stackexchange.com/users/'+comment.userid+'">' + comment.user +
+        '</a>: <span>'+comment.text+'</span> &mdash; <a href="'+comment.link+'">'+
+        TimeSince(comment.timestamp)+'</a> </div>'
+    }).join("\n") + "<div><textarea id=\"FCText\" placeholder=\"Comment...\" style=\"height: 30px;width: 80%;outline: none;border-radius: 2px;\"></textarea><button id=\"FComment\" style=\"vertical-align: top;max-width: 20%;margin-left: 8px;\">Post</button></div>");
+    $('#FCText').keyup(function (e) {
+      if ( (e.keyCode || e.which) === 13 ) $("#FComment").click();
+    });
+    $(document).on('click', "#SPshow", function() {
+      $(".SPrevH").show();
+      $("#SPshow").html("(hide some comments)");
+      $("#SPshow").attr("id", "SPhide");
+    });
+
+    $(document).on('click', "#SPhide", function() {
+      $(".SPrevH").hide();
+      $("#SPhide").html("(show all comments)");
+      $("#SPhide").attr("id", "SPshow");
+    });
+  }
+
+  function INITVIEWER(posts) {
+
+    ALLPOSTS = posts;
+
+    function CommentPost(post, comment) {
+      GM_xmlhttpRequest({
+        method: "POST",
+        data: "fkey=" + StackExchange.options.user.fkey + "&comment=" + encodeURIComponent(comment),
+        url: post+"/comments/",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        onload:function(response){
+          PopupDisplay(" &nbsp;Posted. &nbsp;");
+          UpdatePreviewComments(posts);
+        }
+      });
+    }
+
+    var HTML = "";
+    HTML += '<div><div style="text-align: left; float: left; margin-bottom: 10px;">'+
+      '<button class="FLink">See in Sandbox</button><button id="FBOwnerBack" style="display: none">Back</button><br>'+
+      '<button id="FPREV" disabled>Previous Challenge</button> <button class="sandboxbtn FNEXT">Next</button><button id="FHIDE">Don\'t show this again</button></div>'+
+      '<div id="FBWrapper" style="text-align: right; float: right; margin-top: 15px;">' +
+
+      '<img style="height: 40px; cursor: pointer" src="http://i.stack.imgur.com/EQ1ko.png" class="FVoteUp">' +
+      '<img style="height: 40px; cursor: pointer" src="http://i.stack.imgur.com/OwtQb.png" class="FVoteDown">'+
+      '</div></div>'+
+
+      '<div id="FBOwner" style="display: none"></div>' +
+
+      '<div id="SandboxChallengePreview" style="width: 100%;flex: 1;overflow: scroll; box-shadow: 0px 0px 2px #CCC inset; padding: 12px;">' + ConstructPost(posts[POSTCOUNTER]) + '</div><div id="SandboxPreviewComments"></div>';
+
+    $("#SandboxContent").append('<div style="width: 63%; margin-left: 2%; -webkit-flex-direction: column; flex-direction: column; display: flex;">' + HTML + '</div>');
+    UpdatePreviewComments(posts);
+    $(".sandboxbtn").click(function() {
+      $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 0, function() {
+        setTimeout(function() {
+          $("#SandboxChallengePreview").html(ConstructPost(posts[++POSTCOUNTER]));
+          UpdatePreviewComments(posts);
+          $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 1);
+          if(POSTCOUNTER === 0) $("#FPREV").prop('disabled', true);
+          else $("#FPREV").prop('disabled', false);
+        }, 200);
+      });
+    });
+    $("#FPREV").click(function(){
+      $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 0, function() {
+        setTimeout(function() {
+          $("#SandboxChallengePreview").html(ConstructPost(posts[--POSTCOUNTER]));
+          UpdatePreviewComments(posts);
+          $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 1);
+          if(POSTCOUNTER === 0) $("#FPREV").prop('disabled', true);
+          else $("#FPREV").prop('disabled', false);
+        }, 200);
+      });
+    });
+    $("#FHIDE").click(function() {
+      var H=JSON.parse(localStorage.getItem("FHIDE") || '[]');
+      H.push(posts[POSTCOUNTER].id);
+      localStorage.setItem("FHIDE", JSON.stringify(H));
+      $(".FNEXT").click();
+    });
+    $(document).on('click', ".FVoteUp:not(.FVoteActive)", function() {
+      VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 2);
+      // PopupDisplay("+1'd"); 
+      $(".FVoteActive").removeClass("FVoteActive");
+      $(".FVoteDown").attr('src', 'http://i.stack.imgur.com/OwtQb.png');
+      $(".FVoteUp").attr('src', 'http://i.stack.imgur.com/iu7y5.png');
+      $(".FVoteUp").addClass("FVoteActive");
+    });
+    $(document).on('click', ".FVoteDown:not(.FVoteActive)", function() {
+      VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 3);
+      // PopupDisplay("-1'd"); 
+      $(".FVoteActive").removeClass("FVoteActive");
+      $(".FVoteUp").attr('src', 'http://i.stack.imgur.com/EQ1ko.png');
+      $(".FVoteDown").attr('src', 'http://i.stack.imgur.com/LyK6V.png');
+      $(".FVoteDown").addClass("FVoteActive");
+    });
+    $(document).on('click', ".FVoteActive", function() {
+      VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 0);
+      // PopupDisplay("&plusmn;0");
+      $(".FVoteActive").removeClass("FVoteActive");
+      $(".FVoteUp").attr('src', 'http://i.stack.imgur.com/EQ1ko.png');
+      $(".FVoteDown").attr('src', 'http://i.stack.imgur.com/OwtQb.png');
+    })
+    $("#FComment").click(function() {
+      CommentPost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, $("#FCText").val());
+    });
+    $(".FLink").click(function(){ window.open(posts[POSTCOUNTER].url, "_blank"); });
+    $(".Fmtom").click(function(){ Request("GET", "http://api.stackexchange.com/2.2/answers/"+$(this).data('postid')+"?order=desc&sort=activity&key=Ccn4VoktkZPX*Haf3)iubw((&site=meta.codegolf&filter=!GeEyUcJFJeRCA", function(response) {
+      var res = JSON.parse(response.responseText).items[0].body_markdown;
+      PostPost(GetPostTitle(res), res, $(this).data('postid'));
+    }); });
+  }
+
   $(document).on('click', "#SandboxViewerToggle", function() {
     $('#SandboxViewer').fadeIn(100);
     if (OPENED === false) {
       OPENED = true;
       $("#SandboxViewerToggle").css("background-image", "url(http://i.stack.imgur.com/lBskr.png)");
-      GetChallenges(StackExchange.options.user.userId, function(posts) {
+      GetChallenges(StackExchange.options.user.userId, function(posts, anposts) {
         var HTML = "";
-        HTML += '<h1>Your Sandboxed Posts</h1><div><ul>' + (posts.map(function(post) {
-          return '<li><b><a href="' + post.url + '">' + post.title + '</a></b>' +
+        HTML += '<h1>Your Sandboxed Posts</h1><div><ul>' + (posts.map(function(post, index) {
+          return '<li><b><a class="OPENPOST" data-idn="' + index + '">' + post.title + '</a></b>' +
             '<br><span>score: <span style="color: green;">+' + post.score.up + '</span>'+
             ' <span style="color: red">-' + post.score.down + '</span></span>' +
             '<br><span>active: ' + TimeSince( post.active ) + '</span>'
           // + '<br><a class="Fmtom" data-postid="'+post.id+'">Post to main</a></li>';
         }).join("\n") || "</ul><div>You currently have no Sandboxed posts</div><ul>") + '</ul></div>';
+
+        $(document).on('click', ".OPENPOST", function() {
+          var POST = posts[$(this).data('idn')];
+          var PID  = +$(this).data('idn');
+          if (POST) {
+            var NOWRITEC = Number(POSTCOUNTER);
+
+            $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 0, function() {
+              setTimeout(function() {
+                $("#SandboxChallengePreview").html(ConstructPost(POST));
+                POSTCOUNTER = PID;
+                UpdatePreviewComments(posts);
+                $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 1);
+                $("#FBOwnerBack").show();
+                if(POSTCOUNTER === 0) $("#FPREV").prop('disabled', true);
+                else $("#FPREV").prop('disabled', false);
+              }, 200);
+            });
+
+            $(document).on('click', "#FBOwnerBack", function() {
+              $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 0, function() {
+                setTimeout(function() {
+                  console.log(posts[NOWRITEC], posts, NOWRITEC, PID, POST, POSTCOUNTER);
+                  $("#SandboxChallengePreview").html(ConstructPost(anposts[NOWRITEC]));
+                  POSTCOUNTER = NOWRITEC;
+                  UpdatePreviewComments(anposts);
+                  $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 1);
+                  $("#FBOwnerBack").hide();
+                  if(POSTCOUNTER === 0) $("#FPREV").prop('disabled', true);
+                  else $("#FPREV").prop('disabled', false);
+                }, 200);
+              });
+            });
+          } else {
+            if (!PID) {
+              alert("An error occured identifying this sandbox post.");
+            } else if (POST) {
+              alert("This post is too old to load.");
+            }
+          }
+        });
 
         HTML += '<h1>Latest Activity</h1><div>' + (GetComments(posts).map(function(comment, i, a) {
           return '<div '+
@@ -96,128 +269,7 @@ wmd-input-42=
         }).join("") || "<div>You currently have no Sandboxed posts</div>") + '</div>';
         $("#SandboxContent").prepend('<div style="width: 33%; -webkit-flex-direction: column; flex-direction: column; overflow: auto;">' + HTML + "</div>");
       });
-      GetChallenges("*nofilter*", function(posts) {
-
-        function UpdatePreviewComments() {
-          var Comments = GetComments([posts[POSTCOUNTER]]).reverse();
-          var LIMIT = 2;
-          var a = false;
-          if (Comments.length > LIMIT) a = true;
-          $("#SandboxPreviewComments").html( (a ? '<div style="padding: 5px 2px; border-bottom: 1px solid #DDD; margin-bottom: 3px;"><a id="SPshow">(show all)</a></div>' : "") + Comments.map(function(comment,index,a) {
-            return '<div class="'+(a.length-index>LIMIT?"SPrevH":"")+'" style="'+(a.length-index>LIMIT?"display:none;":"")+'padding: 5px 2px; border-bottom: 1px solid #DDD; margin-bottom: 3px;">'+
-              '<a href="http://codegolf.stackexchange.com/users/'+comment.userid+'">' + comment.user +
-              '</a>: <span>'+comment.text+'</span> &mdash; <a href="'+comment.link+'">'+
-              TimeSince(comment.timestamp)+'</a> </div>'
-          }).join("\n") + "<div><textarea id=\"FCText\" placeholder=\"Comment...\" style=\"height: 30px;width: 80%;outline: none;border-radius: 2px;\"></textarea><button id=\"FComment\" style=\"vertical-align: top;max-width: 20%;margin-left: 8px;\">Post</button></div>");
-          $(document).on('click', "#SPshow", function() {
-            $(".SPrevH").show();
-            $("#SPshow").html("(hide some comments)");
-            $("#SPshow").attr("id", "SPhide");
-          });
-
-          $(document).on('click', "#SPhide", function() {
-            $(".SPrevH").hide();
-            $("#SPhide").html("(show all comments)");
-            $("#SPhide").attr("id", "SPshow");
-          });
-        }
-
-        function ConstructPost(post) {
-          UpdatePreviewComments();
-          $(".FVoteActive").removeClass("FVoteActive");
-          $(".FVoteUp").attr('src', 'http://i.stack.imgur.com/EQ1ko.png');
-          $(".FVoteDown").attr('src', 'http://i.stack.imgur.com/OwtQb.png');
-          return '<div>' + post.body + '</div>';
-        }
-
-        function CommentPost(post, comment) {
-          GM_xmlhttpRequest({
-            method: "POST",
-            data: "fkey=" + StackExchange.options.user.fkey + "&comment=" + encodeURIComponent(comment),
-            url: post+"/comments/",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded"
-            },
-            onload:function(response){
-              PopupDisplay(" &nbsp;Posted. &nbsp;");
-              UpdatePreviewComments();
-            }
-          });
-        }
-
-        var HTML = "";
-        HTML += '<div><div style="text-align: left; float: left; margin-bottom: 10px;">'+
-          '<button class="FLink">See in Sandbox</button><br>'+
-          '<button id="FPREV" disabled>Previous Challenge</button> <button class="sandboxbtn FNEXT">Next</button><button id="FHIDE">Don\'t show this again</button></div>'+
-          '<div style="text-align: right; float: right; margin-top: 15px;">' +
-
-          '<img style="height: 40px; cursor: pointer" src="http://i.stack.imgur.com/EQ1ko.png" class="FVoteUp">' +
-          '<img style="height: 40px; cursor: pointer" src="http://i.stack.imgur.com/OwtQb.png" class="FVoteDown">'+
-          '</div></div>'+
-          '<div id="SandboxChallengePreview" style="width: 100%;flex: 1;overflow: scroll; box-shadow: 0px 0px 2px #CCC inset; padding: 12px;">' + ConstructPost(posts[POSTCOUNTER]) + '</div><div id="SandboxPreviewComments"></div>';
-
-        $("#SandboxContent").append('<div style="width: 63%; margin-left: 2%; -webkit-flex-direction: column; flex-direction: column; display: flex;">' + HTML + '</div>');
-        UpdatePreviewComments();
-        $(".sandboxbtn").click(function() {
-          $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 0, function() {
-            setTimeout(function() {
-              $("#SandboxChallengePreview").html(ConstructPost(posts[++POSTCOUNTER]));
-              UpdatePreviewComments();
-              $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 1);
-              if(POSTCOUNTER === 0) $("#FPREV").prop('disabled', true);
-              else $("#FPREV").prop('disabled', false);
-            }, 200);
-          });
-        });
-        $("#FPREV").click(function(){
-          $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 0, function() {
-            setTimeout(function() {
-              $("#SandboxChallengePreview").html(ConstructPost(posts[--POSTCOUNTER]));
-              UpdatePreviewComments();
-              $("#SandboxChallengePreview, #SandboxPreviewComments").fadeTo(100, 1);
-              if(POSTCOUNTER === 0) $("#FPREV").prop('disabled', true);
-              else $("#FPREV").prop('disabled', false);
-            }, 200);
-          });
-        });
-        $("#FHIDE").click(function() {
-          var H=JSON.parse(localStorage.getItem("FHIDE") || '[]');
-          H.push(posts[POSTCOUNTER].id);
-          localStorage.setItem("FHIDE", JSON.stringify(H));
-          $(".FNEXT").click();
-        });
-        $(document).on('click', ".FVoteUp:not(.FVoteActive)", function() {
-          VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 2);
-          // PopupDisplay("+1'd"); 
-          $(".FVoteActive").removeClass("FVoteActive");
-          $(".FVoteDown").attr('src', 'http://i.stack.imgur.com/OwtQb.png');
-          $(".FVoteUp").attr('src', 'http://i.stack.imgur.com/iu7y5.png');
-          $(".FVoteUp").addClass("FVoteActive");
-        });
-        $(document).on('click', ".FVoteDown:not(.FVoteActive)", function() {
-          VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 3);
-          // PopupDisplay("-1'd"); 
-          $(".FVoteActive").removeClass("FVoteActive");
-          $(".FVoteUp").attr('src', 'http://i.stack.imgur.com/EQ1ko.png');
-          $(".FVoteDown").attr('src', 'http://i.stack.imgur.com/LyK6V.png');
-          $(".FVoteDown").addClass("FVoteActive");
-        });
-        $(document).on('click', ".FVoteActive", function() {
-          VotePost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 0);
-          // PopupDisplay("&plusmn;0");
-          $(".FVoteActive").removeClass("FVoteActive");
-          $(".FVoteUp").attr('src', 'http://i.stack.imgur.com/EQ1ko.png');
-          $(".FVoteDown").attr('src', 'http://i.stack.imgur.com/OwtQb.png');
-        })
-        $("#FComment").click(function(){
-          CommentPost("http://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, $("#FCText").val());
-        });
-        $(".FLink").click(function(){ window.open(posts[POSTCOUNTER].url, "_blank"); });
-        $(".Fmtom").click(function(){ Request("GET", "http://api.stackexchange.com/2.2/answers/"+$(this).data('postid')+"?order=desc&sort=activity&key=Ccn4VoktkZPX*Haf3)iubw((&site=meta.codegolf&filter=!GeEyUcJFJeRCA", function(response) {
-          var res = JSON.parse(response.responseText).items[0].body_markdown;
-          PostPost(GetPostTitle(res), res, $(this).data('postid'));
-        }); });
-      });
+      GetChallenges("*nofilter*", INITVIEWER);
       $("#USERLOAD").remove();
     }
   });
@@ -272,24 +324,26 @@ wmd-input-42=
     return (markdown.match(/(?:\n|^)#+(.+)/) || ["", "Unknown Title"])[1];
   }
 
+  function GetPostData(p) {
+    return {
+      title: GetPostTitle(p.body_markdown),
+      score: {
+        up: p.up_vote_count,
+        down: p.down_vote_count
+      },
+      url: p.link,
+      comments: p.comments,
+      id: p.answer_id,
+      body: p.body,
+      post: p,
+      active: p.last_activity_date
+    };
+  }
+
   function GetChallenges(userid, callback) {
-    GetUserPosts(userid, function(posts) {
-      callback(posts.map(function(p) {
-        //console.log(p);
-        return {
-          title: GetPostTitle(p.body_markdown),
-          score: {
-            up: p.up_vote_count,
-            down: p.down_vote_count
-          },
-          url: p.link,
-          comments: p.comments,
-          id: p.answer_id,
-          body: p.body,
-          post: p,
-          active: p.last_activity_date
-        };
-      }));
+    GetUserPosts(userid, function(posts, all) {
+      if (all) callback(posts.map(GetPostData), all.map(GetPostData));
+      else callback(posts.map(GetPostData));
     });
   }
 
@@ -330,7 +384,9 @@ wmd-input-42=
         var items = JSON.parse(data.response).items;
         function Loop(i, a) {
           if (i > items.length - 1) {
-            callback(a);
+            GetUserPosts("*nofilter*", function (nonposts) {
+              callback(a, nonposts);
+            });
           } else {
             Request("GET", 'http://api.stackexchange.com/2.2/answers/'+items[i].answer_id+'?pagesize=100&order=desc&sort=activity&site=meta.codegolf&filter=!-2qNq(tTGQYRU3SZ87hedUU)5htvSK6RNae3(IkBC-M8i', function(r) {
               a.push(JSON.parse(r.response).items[0]);

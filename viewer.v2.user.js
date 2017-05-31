@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Sandbox Viewer
 // @namespace    https://github.com/vihanb/PPCG-SandboxViewer
-// @version      2.4
+// @version      2.5
 // @description  PPCG Sandbox Viewer
 // @author       Downgoat
 // @match        *://*.stackexchange.com/*
@@ -35,7 +35,7 @@ function InjectSandboxScript() {
     // 2 - Upvote
     // 3 - Downvote
     // 10- Delete
-    // Post: http://<site>.com/posts/<post_id>/vote/<state>
+    // Post: https://<site>.com/posts/<post_id>/vote/<state>
     GM_xmlhttpRequest({
       method: "POST",
       data: "fkey=" + StackExchange.options.user.fkey,
@@ -60,7 +60,7 @@ function InjectSandboxScript() {
         var url  = (response.responseText.match(/<meta property="og:url" content="([^"]+)/)||[])[1];
         var title= $(response.responseText).find("title").text();
         var win = window.open(url, title || "Post From the Sandbox");
-        VotePost("https://meta.codegolf.stackexchange.com/posts/" + id, 10);
+        VotePost("https://codegolf.meta.stackexchange.com/posts/" + id, 10);
         win.document.write(response.responseText);
       }
     });
@@ -175,7 +175,7 @@ wmd-input-42=
       $(".FNEXT").click();
     });
     $(document).on('click', ".FVoteUp:not(.FVoteActive)", function() {
-      VotePost("https://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 2);
+      VotePost("https://codegolf.meta.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 2);
       // PopupDisplay("+1'd"); 
       $(".FVoteActive").removeClass("FVoteActive");
       $(".FVoteDown").attr('src', 'https://i.stack.imgur.com/OwtQb.png');
@@ -183,7 +183,7 @@ wmd-input-42=
       $(".FVoteUp").addClass("FVoteActive");
     });
     $(document).on('click', ".FVoteDown:not(.FVoteActive)", function() {
-      VotePost("https://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 3);
+      VotePost("https://codegolf.meta.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 3);
       // PopupDisplay("-1'd"); 
       $(".FVoteActive").removeClass("FVoteActive");
       $(".FVoteUp").attr('src', 'https://i.stack.imgur.com/EQ1ko.png');
@@ -191,14 +191,14 @@ wmd-input-42=
       $(".FVoteDown").addClass("FVoteActive");
     });
     $(document).on('click', ".FVoteActive", function() {
-      VotePost("https://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 0);
+      VotePost("https://codegolf.meta.stackexchange.com/posts/" + posts[POSTCOUNTER].id, 0);
       // PopupDisplay("&plusmn;0");
       $(".FVoteActive").removeClass("FVoteActive");
       $(".FVoteUp").attr('src', 'https://i.stack.imgur.com/EQ1ko.png');
       $(".FVoteDown").attr('src', 'https://i.stack.imgur.com/OwtQb.png');
     })
     $("#FComment").click(function() {
-      CommentPost("https://meta.codegolf.stackexchange.com/posts/" + posts[POSTCOUNTER].id, $("#FCText").val());
+      CommentPost("https://codegolf.meta.stackexchange.com/posts/" + posts[POSTCOUNTER].id, $("#FCText").val());
     });
     $(".FLink").click(function(){ window.open(posts[POSTCOUNTER].url, "_blank"); });
     $(".Fmtom").click(function(){ Request("GET", "https://api.stackexchange.com/2.2/answers/"+$(this).data('postid')+"?order=desc&sort=activity&key=Ccn4VoktkZPX*Haf3)iubw((&site=meta.codegolf&filter=!GeEyUcJFJeRCA", function(response) {
@@ -348,7 +348,7 @@ wmd-input-42=
   }
 
   function OpenSockets() {
-    var ws = new WebSocket("ws://qa.sockets.stackexchange.com/");
+    var ws = new WebSocket("wss://qa.sockets.stackexchange.com/");
     ws.onmessage = function(e) {
       // If this shows up then it's good
       console.log("Hi, you must be looking at your console wondering what the heck this message means. It means you should be happy that this message is being logged otherwise something very wrong happened");

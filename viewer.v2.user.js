@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         Sandbox Viewer
 // @namespace    https://github.com/vihanb/PPCG-SandboxViewer
-// @version      2.5
+// @version      2.6
 // @description  PPCG Sandbox Viewer
 // @author       Downgoat
 // @match        *://*.stackexchange.com/*
 // @grant        GM_xmlhttpRequest
+// @connect      codegolf.meta.stackexchange.com
 // @updateURL    https://rawgit.com/vihanb/PPCG-SandboxViewer/master/viewer.v2.user.js
 // ==/UserScript==
 
@@ -13,7 +14,7 @@ function InjectSandboxScript() {
 
   var OPENED = false;
   $("body").prepend('<div id="SandboxViewer" style="display:none; width: inherit; height: inherit;"></div>');
-  $("body").prepend('<div id="SandboxPopdisp" style="display: none; z-index: 5; position: fixed; background: rgba(0, 0, 0, 0.75); color: white; top: 50%; left: 50%; line-height: 70px; text-align: center; font-size: 36px; font-weight: bold; height: 70px; width: 120px; border-radius: 8px; -webkit-transform: translateY(-50%) translateX(-50%); transform: translateY(-50%) translateX(-50%);"></div>');
+	$("body").prepend('<div id="SandboxPopdisp" style="display: none; z-index: 5; position: fixed; background: rgba(0, 0, 0, 0.75); color: white; top: 50%; left: 50%; line-height: 70px; text-align: center; font-size: 36px; font-weight: bold; height: 70px; width: 120px; border-radius: 8px; -webkit-transform: translateY(-50%) translateX(-50%); transform: translateY(-50%) translateX(-50%);"></div>');
   $('#SandboxViewer').prepend('<div id="SandboxBlur" style="position: fixed;z-index:2;width:100%;height:100%;background:rgba(0,0,0,0.5)"></div>');
   $('#SandboxViewer').append('<div id="SandboxContent" style="position: fixed; overflow: scroll; z-index: 3; width: 100%; height: 100%;box-sizing:border-box;top: 50%;left: 50%;-webkit-transform: translateY(-50%) translateX(-50%);transform: translateY(-50%) translateX(-50%);background: #FAFAFA;padding: 1.2em;display: -webkit-flex;display: flex;"><div style="color: gray;position: fixed;cursor: pointer;top: 0px;left: 5px;font-size: 14px;" id="closeviewer">x</div><span id="USERLOAD">Loading...</span></div>');
 
@@ -86,6 +87,7 @@ wmd-input-42=
 
   function UpdatePreviewComments(posts) {
     var Comments = GetComments([posts[POSTCOUNTER]]).reverse();
+	  console.log("obtained comments: ", Comments);
     var LIMIT = 2;
     var a = false;
     if (Comments.length > LIMIT) a = true;
@@ -116,6 +118,7 @@ wmd-input-42=
     ALLPOSTS = posts;
 
     function CommentPost(post, comment) {
+		console.log(post + "/comments/", "fkey=" + StackExchange.options.user.fkey + "&comment=" + encodeURIComponent(comment));
       GM_xmlhttpRequest({
         method: "POST",
         data: "fkey=" + StackExchange.options.user.fkey + "&comment=" + encodeURIComponent(comment),
@@ -124,8 +127,12 @@ wmd-input-42=
           "Content-Type": "application/x-www-form-urlencoded"
         },
         onload:function(response){
-          PopupDisplay(" &nbsp;Posted. &nbsp;");
-          UpdatePreviewComments(posts);
+		  if (response.status === 500) {
+			  alert("Error posting. Is your comment > 15 chars?");
+		  } else {
+			  PopupDisplay(" &nbsp;Posted. &nbsp;");
+			  UpdatePreviewComments(posts);
+		  }
         }
       });
     }
@@ -196,8 +203,8 @@ wmd-input-42=
       $(".FVoteActive").removeClass("FVoteActive");
       $(".FVoteUp").attr('src', 'https://i.stack.imgur.com/EQ1ko.png');
       $(".FVoteDown").attr('src', 'https://i.stack.imgur.com/OwtQb.png');
-    })
-    $("#FComment").click(function() {
+    });
+    $(document).on('click', "#FComment", function() {
       CommentPost("https://codegolf.meta.stackexchange.com/posts/" + posts[POSTCOUNTER].id, $("#FCText").val());
     });
     $(".FLink").click(function(){ window.open(posts[POSTCOUNTER].url, "_blank"); });
@@ -412,3 +419,4 @@ wmd-input-42=
 }
 
 InjectSandboxScript();
+

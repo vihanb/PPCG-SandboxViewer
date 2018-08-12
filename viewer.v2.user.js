@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Sandbox Viewer
 // @namespace    https://github.com/vihanb/PPCG-SandboxViewer
-// @version      2.6
+// @version      2.7
 // @description  PPCG Sandbox Viewer
 // @author       Downgoat
 // @match        *://*.stackexchange.com/*
@@ -12,13 +12,15 @@
 
 function InjectSandboxScript() {
 
+  console.log("PPCG Sandbox Viewer Running");
+
   var OPENED = false;
   $("body").prepend('<div id="SandboxViewer" style="display:none; width: inherit; height: inherit;"></div>');
-	$("body").prepend('<div id="SandboxPopdisp" style="display: none; z-index: 5; position: fixed; background: rgba(0, 0, 0, 0.75); color: white; top: 50%; left: 50%; line-height: 70px; text-align: center; font-size: 36px; font-weight: bold; height: 70px; width: 120px; border-radius: 8px; -webkit-transform: translateY(-50%) translateX(-50%); transform: translateY(-50%) translateX(-50%);"></div>');
-  $('#SandboxViewer').prepend('<div id="SandboxBlur" style="position: fixed;z-index:2;width:100%;height:100%;background:rgba(0,0,0,0.5)"></div>');
-  $('#SandboxViewer').append('<div id="SandboxContent" style="position: fixed; overflow: scroll; z-index: 3; width: 100%; height: 100%;box-sizing:border-box;top: 50%;left: 50%;-webkit-transform: translateY(-50%) translateX(-50%);transform: translateY(-50%) translateX(-50%);background: #FAFAFA;padding: 1.2em;display: -webkit-flex;display: flex;"><div style="color: gray;position: fixed;cursor: pointer;top: 0px;left: 5px;font-size: 14px;" id="closeviewer">x</div><span id="USERLOAD">Loading...</span></div>');
+  $("body").prepend('<div id="SandboxPopdisp" style="display: none; z-index: 5; position: fixed; background: rgba(0, 0, 0, 0.75); color: white; top: 50%; left: 50%; line-height: 70px; text-align: center; font-size: 36px; font-weight: bold; height: 70px; width: 120px; border-radius: 8px; -webkit-transform: translateY(-50%) translateX(-50%); transform: translateY(-50%) translateX(-50%);"></div>');
+  $('#SandboxViewer').prepend('<div id="SandboxBlur" style="position: fixed;z-index:3000;width:100%;height:100%;background:rgba(0,0,0,0.5)"></div>');
+  $('#SandboxViewer').append('<div id="SandboxContent" style="position: fixed; overflow: scroll; z-index: 3001; width: 100%; height: 100%;box-sizing:border-box;top: 50%;left: 50%;-webkit-transform: translateY(-50%) translateX(-50%);transform: translateY(-50%) translateX(-50%);background: #FAFAFA;padding: 1.2em;display: -webkit-flex;display: flex;"><div style="color: gray;position: fixed;cursor: pointer;top: 0px;left: 5px;font-size: 14px;" id="closeviewer">x</div><span id="USERLOAD">Loading...</span></div>');
 
-  $(".topbar .topbar-wrapper .network-items").append('<a id="SandboxViewerToggle" class="topbar-icon yes-hover" style="z-index:1;width: 36px; background-image: url(https://i.stack.imgur.com/lBskr.png); background-size: 19px 19px; background-position: 8px 7px"></a>');
+  $(".top-bar .-secondary").append('<li><a id="SandboxViewerToggle" class="topbar-icon yes-hover" style="z-index:1;background-repeat: no-repeat;display:block;height: 36px;width: 36px; background-image: url(https://i.stack.imgur.com/lBskr.png); background-size: 19px 19px; background-position: 8px 7px"></a></li>');
 
   var POSTCOUNTER = 0;
 
@@ -419,4 +421,5 @@ wmd-input-42=
 }
 
 InjectSandboxScript();
+
 
